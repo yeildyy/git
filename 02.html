@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>俄罗斯方块</title>
+</head>
+<style type="text/css">
+#canvas{	
+	background: black;
+	/* 绝对定位的盒子居中对齐方法 */
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	margin: auto;
+}
+</style>
+<body>
+	<canvas  width="500" height="500" id="canvas"></canvas>
+	<script type="text/javascript">
+       var canvas=document.getElementById('canvas');
+       //创建2d绘图环境
+       var gc=canvas.getContext("2d");
+       //填充颜色
+       //gc.fillStyle='red';
+       //绘制方块
+       //gc.fillRect(100,100,200,200);   //创建方块的位置（x轴的位置，y轴的位置，以及方块的宽高）
+       //创建二维数组
+       /*var data=[];
+       var r=10;//行ROW
+       var c=10;//列Column
+       for (var i = 0; i < r; i++) {
+       data.push([]);//添加了一些数组
+       for (var j = 0; j < c; j++) {
+       		data[i].push(0);
+       }
+        }
+       console.log(data);*/
+       /*数组中的0代表着地图上不移动的方块
+       数组中的1代表着地图上移动的方块*/
+       //创建地图
+    
+      var data=map(12,12);
+      var arr=[
+      	[[1,1,1,1]],
+      	[[1,1],[1,1]],
+      	[[1,1,0],[0,1,1]],
+      	[[0,1,1],[1,1,0]],
+      	[[0,1,0],[1,1,1]],
+      	[[1,0,0],[1,1,1]],
+      	[[0,0,1],[1,1,1]],
+      ];
+      var y=0;
+      var x=4;
+      var matrix=mold();//matrix保存随机出来的方块，这样可以在运动过程中一直使用
+      //生成地图
+      var timer=null;
+      var onOff=false;
+       render(data,gc);
+       //方块下落
+       /*setInterval(function(){
+       	if (y>data.length-1) {
+       		y=0;
+       		matrix=mold();
+       	}
+       	clearPre(matrix);
+       	y++;
+       	create(matrix);
+       fall();
+       },400);*/
+       auto(400);
+       create(matrix);//对数据进行更新
+       //控制方块左右移动
+       play();
+       function auto(time){
+         setInterval(function(){
+         	fall();
+         },time);
+       }
+       //方块变形
+       /*console.log(rotate(arr[2]));*/
+       function rotate(){
+       	var arr=[];
+       	var y=matrix.length;
+       	var x=matrix[0].length;
+       	//把arr变成一个二维数组
+       	for (var i = 0; i < x; i++) {
+       		arr.push([]); 
+       		   	} 
+       	   for (var i = 0; i < y; i++) {
+       	   	   for(var j=0;j<x;j++){
+                  arr[j][y-1-i]=matrix[i][j]; 
+              }
+       	   }
+       	  matrix=arr;//返回出去，以后赋值也可以
+       }
+
+       function play(){
+       	document.onkeydown=function(ev){
+       		switch(ev.keyCode){
+       			case 37://向左移动
+       			clearPre(matrix);
+                 x--; 
+                 if (x<0) {
+                 	x=0;
+                 } 
+                create(matrix);
+       			break;
+       			case 39://向右移动
+       			clearPre(matrix);
+                 x++; 
+                 if (x+matrix[0].length>=data[0].length) {
+                 	x=data[0].length-matrix[0].length;
+                 } 
+                create(matrix);
+       			break;
+       			case 38://方块变形
+       			clearPre(matrix);
+       			rotate(matrix);
+       			create(matrix);
+       			break;
+       			case 40://方块加速向下
+       			if (onOff) return; 
+       			onOff=true;
+       			clearInterval(
+       				timer);
+       			auto(100);
+       			break;
+       		}
+
+       	};
+       	document.onkeyup=function(ev){
+       		if (ev.keyCode==40) {
+       			onOff=false;
+       			clearInterval(timer);
+       			auto(400);
+       		}
+       	}
+       }
+
+       //方块下落
+       function fall(){
+       	//判断当方块移动到底部的时候停下，重新生成一个新的方块下移
+       		if (collideTest()) 
+       		{
+       		y=0;
+       		x=4;
+       		matrix=mold();
+       	}
+       	clearPre(matrix);//清除前面
+       	y++;
+       	create(matrix);
+       }
+       //检测是否碰撞
+       function collideTest(){
+       	var len=matrix.length;
+       	if(y+len>=data.length){
+       		return true;
+       	}
+       		for(var i=len-1;i<len; i++) {
+      	    for (var j = 0; j < matrix[i].length; j++) {
+      		//方块数组的位置是0说明是空的·，就不需要检测了
+      		//如果data[i+y+1][j+5]的位置是1，说明这个位置已经有一个方块了，就说明移动中碰到下面的方块了。返回TRUE说明到底部或者已经碰撞
+      		if (matrix[i][j]&&data[i+y+1][j+x]==1) {
+      			return true;
+      		}   
+      	}
+     }
+       return false;
+   }
+       //在移动中清除前面的方块
+       function clearPre(arr){
+       	 for (var i = 0; i < arr.length; i++) {
+      	//arr[i]  data[i]
+      	for (var j = 0; j < arr[i].length; j++) {
+      		if (data[i+y][j+x]==1) {
+      			data[i+y][j+x]=0;
+      		}
+      	}
+      }
+       }
+       /*this.mold={
+      	s:[[1,1,1,1]],
+      	b:[[1,1],[1,1]],
+      	z:[[1,1,0],[0,1,1]],
+      	z1:[[0,1,1],[1,1,0]],
+      	t:[[0,1,0],[1,1,1]],
+      	l:[[1,0,0],[1,1,1]],
+      	l1:[[0,0,1],[1,1,1]],
+      };*/
+      //console.log(mold());
+      //创建方块
+     function create(arr){
+      /*var arr=mold();*/
+      for (var i = 0; i < arr.length; i++) {
+      	//arr[i]  data[i]
+      	for (var j = 0; j < arr[i].length; j++) {
+      		if (!data[i+y][j+x]) {
+      			data[i+y][j+x]=arr[i][j];
+      		}
+      	}
+      }
+       render(data,gc);
+      }
+      //产生随机方块
+      var arr=mold();
+      /*for (var i = 0; i < arr.length; i++) {
+      	for (var j = 0; j < arr[i].length; j++) {
+      		data[i][j]=arr[i][j];
+      	}
+      }
+       render(data,gc);*/
+
+       //生成随机方块数据
+      function mold(){ 
+      	var num=Math.floor(Math.random()*7);
+      	/*var arr=[
+      	[[1,1,1,1]],
+      	[[1,1],[1,1]],
+      	[[1,1,0],[0,1,1]],
+      	[[0,1,1],[1,1,0]],
+      	[[0,1,0],[1,1,1]],
+      	[[1,0,0],[1,1,1]],
+      	[[0,0,1],[1,1,1]],
+      ];*/
+      return arr[num];
+      }
+      
+       //创建方块（把方块绘制到地图上去）
+       function render(data,gc){
+       	var w=500/12-10;
+       	var h=w;
+       	var rLen = data.length;
+       	var cLen = data[0].length;
+        for (var i = 0; i < rLen; i++) {
+        	for (var j = 0; j < cLen; j++) {
+        		gc.fillStyle=data[i][j]==0?'blue':'yellow';
+        		gc.fillRect(j*(w+10)+5,i*(h+10)+5,w,h);
+    
+        	}
+        }
+      }
+
+
+
+
+          //创建地图数据
+       function map(r,c) {
+       var data=[];
+       for (var i = 0; i < r; i++) {
+       	data.push([]);//添加了一些数组
+       	for (var j = 0; j < c; j++) {
+       		data[i].push(0);
+       	}
+       }
+       return data;//创建完成必须返回出去
+       }
+  
+	</script>
+</body>
+</html> 
